@@ -14,7 +14,7 @@ export default function CampusSearchBar({ addCampus }) {
   useEffect(() => {
     if (query.trim().length < 3) {
       setSuggestions([]);
-      isLoading(false);
+      setIsLoading(false);
       return;
     }
 
@@ -50,11 +50,11 @@ export default function CampusSearchBar({ addCampus }) {
     return () => clearTimeout(delayDebounceFn);
   }, [query, isLoading, LOCATIONIQ_KEY]);
 
-  const handleClick = (item) => {
+  const handleClick = async(item) => {
     const lat = parseFloat(item.lat);
     const lng = parseFloat(item.lon);
 
-    const result = addCampus({
+    const result = await addCampus({
       name: item.display_place,
       lat,
       lng,
@@ -102,7 +102,7 @@ export default function CampusSearchBar({ addCampus }) {
                 {item.display_name}
               </div>
               <div>
-                <button onClick={() => handleClick(item)}>Add</button>
+                <button className="text-yellow-500 bg-blue-500" onClick={() => handleClick(item)}>Add</button>
               </div>
             </li>
           ))}

@@ -4,15 +4,15 @@ import { supabase } from "@/_lib/supabaseClient";
 import { revalidatePath } from "next/cache";
 
 export async function addCampus(campusData) {
-    try{
+  let createdData = null;
+  try {
+    const { name, lng, lat, state, district, address } = campusData;
 
-        const { name, lng, lat, state, district, address } = campusData;
-        
-        if (!name || !lat || !lng)
-    return {
-success: false,
-      error: "Campus name, latitude, and longitude are required.",
-    };
+    if (!name || !lat || !lng)
+      return {
+        success: false,
+        error: "Campus name, latitude, and longitude are required.",
+      };
 
     const { data, error } = await supabase
       .from("campuses")
@@ -27,15 +27,16 @@ success: false,
       .select()
       .single();
 
-      if (error) {
-          console.error("Supabase insert error (campuses):", error.message);
-          return { success: false, error: error.message };
+      createdData = data;
+
+    if (error) {
+      console.error("Supabase insert error (campuses):", error.message);
+      return { success: false, error: error.message };
     }
-    revalidatePath("/campus");
-    
-    return { success: true, data };
-}catch(err){
+  } catch (err) {
     console.error("Unexpected error in addCampus:", err);
     return { success: false, error: "Internal server error." };
-}
+  }
+  revalidatePath("/campus");
+  return { success: true, createdData };
 }

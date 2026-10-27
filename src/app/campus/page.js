@@ -1,21 +1,22 @@
-"use client";
+import AvailableCampusesMapWrapper from "@/_components/AvailableCampusesMapWrapper.js";
+import { supabase } from "@/_lib/supabaseClient";
 
-import dynamic from "next/dynamic";
+export const metadata = {
+  title: "Available Campuses | Campus Route Finder",
+  description: "Browse and navigate university campuses",
+};
 
-const CampusMap = dynamic(() => import("@/_components/CampusMap"), {
-  ssr: false,
-  loading: () => (
-    <div className="h-96 w-full flex items-center justify-center bg-gray-100 text-gray-500 rounded-lg">
-      Loading campus map...
-    </div>
-  ),
-});
+export default async function CampusPage() {
+  const { data, error } = await supabase.from("campuses").select("*");
 
-export default function CampusPage() {
+  if(error) throw new Error("Failed to fetch Campus Data: ", error.message);
+
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-4">
-      <h1 className="text-2xl font-bold text-gray-800">Display available campuses</h1>
-      <CampusMap />
+      <h1 className="text-2xl font-bold text-gray-800">
+        Available Campuses
+      </h1>
+      <AvailableCampusesMapWrapper campuses={data}/>
     </div>
   );
 }
