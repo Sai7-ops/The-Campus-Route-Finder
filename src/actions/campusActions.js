@@ -74,7 +74,7 @@ export async function fetchPathways(campusId) {
   try {
     const { data, error } = await supabase
       .from("pathways")
-      .select("id, location1_id, location2_id, distance_m, is_blocked, tage, cautions, description, coordinates")
+      .select("id, location1_id, location2_id, distance_m, is_blocked, tags, cautions, description, coordinates")
       .eq("campus_id", campusId);
 
     if (error) return { success: false, error: error.message, data: null };

@@ -11,11 +11,11 @@ const NewLocationMap = dynamic(() => import("@/_components/NewLocationMap"), {
   ),
 });
 
-export default function NewLocationMapWrapper({campus}) {
+export default function NewLocationMapWrapper({campus, locations}) {
   return (
     <div className="p-6 max-w-4xl mx-auto space-y-4">
       <h1>Click on map to select a location in {campus.name}</h1>
-      <NewLocationMap campus={campus}/>
+      <NewLocationMap campus={campus} locations={locations}/>
     </div>
   );
 }

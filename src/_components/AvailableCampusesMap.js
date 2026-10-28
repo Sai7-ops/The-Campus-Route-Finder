@@ -14,7 +14,7 @@ L.Icon.Default.mergeOptions({
 
 export default function AvailableCampusesMap({ campuses }) {
   return (
-    <div className="h-96 w-full rounded-lg overflow-hidden border border-gray-200">
+    <div className="h-110 w-full rounded-lg overflow-hidden border border-gray-200">
       <MapContainer
         center={[20.5937, 78.9629]}
         zoom={5}

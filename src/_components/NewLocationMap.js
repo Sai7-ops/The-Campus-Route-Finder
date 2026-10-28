@@ -28,11 +28,12 @@ const ClickHandler = ({ onSelectLocation }) => {
   });
 };
 
-export default function NewLocationMap({ campus }) {
+export default function NewLocationMap({ campus, locations }) {
   const [selectedPosition, setSelectedPosition] = useState(null);
 
   const [state, formAction, isPending] = useActionState(
     async (prevState, formData) => {
+      setSelectedPosition(null);
       return await addLocation(formData);
     },
     null,
@@ -51,7 +52,7 @@ export default function NewLocationMap({ campus }) {
       <div className="h-96 w-full rounded-lg overflow-hidden border border-gray-200">
         <MapContainer
           center={[campus.lat, campus.lng]}
-          zoom={19}
+          zoom={17}
           maxZoom={21}
           scrollWheelZoom={false}
           className="h-full w-full"
@@ -65,6 +66,20 @@ export default function NewLocationMap({ campus }) {
 
           <ClickHandler onSelectLocation={handleMapClick} />
 
+          {locations?.length === 0 ? null : (
+            locations.map((location)=> {
+              return(
+                <Marker key={location.id} position={[location.lat, location.lng]}>
+                  <Popup>
+                    <h1>Already existing location</h1>
+                    <p>{location.name}</p>
+                    <p>{location.description}</p>
+                  </Popup>
+                </Marker>
+              )
+            })
+          )}
+
           {selectedPosition && (
             <Marker position={selectedPosition}>
               <Popup>
@@ -77,7 +92,7 @@ export default function NewLocationMap({ campus }) {
       </div>
       <div>
         <form action={formAction} className="space-y-4 max-w-md">
-          <input type="hidden" name="campusId" value={campus.campusId} />
+          <input type="hidden" name="campusId" value={campus.id} />
           <input type="hidden" name="lat" value={selectedPosition?.lat || ""} />
           <input type="hidden" name="lng" value={selectedPosition?.lng || ""} />
           <div>
