@@ -13,7 +13,6 @@ L.Icon.Default.mergeOptions({
 });
 
 export default function CampusNetwork({ campus, locations, pathways }) {
-  console.log(locations);
   return (
     <>
       <div className="h-96 w-full rounded-lg overflow-hidden border border-gray-200">
