@@ -3,7 +3,6 @@
 import { MapContainer, TileLayer, Marker, Popup } from "react-leaflet";
 import L from "leaflet";
 import Link from "next/link";
-import { useEffect } from "react";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -18,7 +17,7 @@ export default function AvailableCampusesMap({ campuses }) {
     <div className="h-96 w-full rounded-lg overflow-hidden border border-gray-200">
       <MapContainer
         center={[20.5937, 78.9629]}
-        zoom={6}
+        zoom={5}
         scrollWheelZoom={false}
         className="h-full w-full"
       >

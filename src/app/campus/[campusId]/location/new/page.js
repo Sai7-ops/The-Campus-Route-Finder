@@ -1,7 +1,7 @@
-export default function NewPathway(){
+export default function Newlocation(){
     return (
         <div>
-            <h1>Add New Pathway</h1>
+            <h1>Add New Location</h1>
         </div>
     )
 }

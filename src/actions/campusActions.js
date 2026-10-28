@@ -27,7 +27,7 @@ export async function addCampus(campusData) {
       .select()
       .single();
 
-      createdData = data;
+    createdData = data;
 
     if (error) {
       console.error("Supabase insert error (campuses):", error.message);
@@ -39,4 +39,47 @@ export async function addCampus(campusData) {
   }
   revalidatePath("/campus");
   return { success: true, createdData };
+}
+
+export async function fetchCampus(campusId) {
+  try {
+    const { data, error } = await supabase
+      .from("campuses")
+      .select("id, name, lat, lng, address")
+      .eq("id", campusId)
+      .single();
+
+    if (error) return { success: false, error: error.message, data: null };
+    return { success: true, data };
+  } catch (err) {
+    return { success: false, error: err.message, data: null };
+  }
+}
+
+export async function fetchLocations(campusId) {
+  try {
+    const { data, error } = await supabase
+      .from("locations")
+      .select("id, name, lat, lng, description")
+      .eq("campus_id", campusId);
+
+    if (error) return { success: false, error: error.message, data: null };
+    return { success: true, data };
+  } catch (err) {
+    return { success: false, error: err.message, data: null };
+  }
+}
+
+export async function fetchPathways(campusId) {
+  try {
+    const { data, error } = await supabase
+      .from("pathways")
+      .select("id, location1_id, location2_id, distance_m, is_blocked, tage, cautions, description, coordinates")
+      .eq("campus_id", campusId);
+
+    if (error) return { success: false, error: error.message, data: null };
+    return { success: true, data };
+  } catch (err) {
+    return { success: false, error: err.message, data: null };
+  }
 }

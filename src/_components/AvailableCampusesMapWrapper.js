@@ -26,8 +26,8 @@ export default function CampusPage({ campuses }) {
       <div>
         {campuses.map((campus) => {
           return (
-            <>
-              <div key={campus.id}>
+            <div key={campus.id}>
+              <div>
                 <h1>{campus.name}</h1>
                 <p>{campus.address}</p>
                 <p>{campus.state}</p>
@@ -36,7 +36,7 @@ export default function CampusPage({ campuses }) {
               <div>
                 <Link href={`/campus/${campus.id}/network`}>View Campus Network</Link>
               </div>
-            </>
+            </div>
           );
         })}
       </div>
