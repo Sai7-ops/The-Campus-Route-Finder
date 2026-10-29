@@ -1,5 +1,8 @@
 "use server";
 
+import { supabase } from "@/_lib/supabaseClient";
+import { revalidatePath } from "next/cache";
+
 export async function fetchMultiCampusPathways(
   start,
   end,
@@ -9,13 +12,17 @@ export async function fetchMultiCampusPathways(
   const [lat2, lng2] = end;
 
   const coords = `${lng1},${lat1};${lng2},${lat2}`;
-  const baseParams = `overview=full&geometries=geojson&alternatives=true&radiuses=${toleranceRadius};${toleranceRadius}`;
+  const url = new URL(
+    `https://router.project-osrm.org/route/v1/foot/${coords}`,
+  );
+
+  url.searchParams.set("overview", "full");
+  url.searchParams.set("geometries", "geojson");
+  url.searchParams.set("alternatives", "true");
 
   const fetchRoutes = async () => {
     try {
-      const res = await fetch(
-        `https://router.project-osrm.org/route/v1/driving/${coords}?${baseParams}`,
-      );
+      const res = await fetch(url.toString());
 
       if (!res.ok) return { success: false, routes: [] };
       const data = await res.json();
@@ -46,6 +53,8 @@ export async function fetchMultiCampusPathways(
       coordinates: leafletCoords,
     });
   });
+
+  console.log(leafletRoutes);
 
   return leafletRoutes.sort((a, b) => a.distance_m - b.distance_m);
 }
@@ -143,7 +152,7 @@ export async function fetchMultiModeCampusPathways(
   return aggregateRoutes.sort((a, b) => a.distance_m - b.distance_m);
 }
 
-export default async function addPathway(payload) {
+export async function addPathway(payload) {
   try {
     const {
       campus_id,
