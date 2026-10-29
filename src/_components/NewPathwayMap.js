@@ -30,6 +30,11 @@ export default function NewPathwayMap({ campus, locations, pathways }) {
   const [error, setError] = useState(null);
   const [loc1, setLoc1] = useState(null);
   const [loc2, setLoc2] = useState(null);
+  const [tags, setTags] = useState([]);
+  const [tag, setTag] = useState("");
+  const [cautions, setCautions] = useState([]);
+  const [caution, setCaution] = useState("");
+  const [description, setDescription] = useState({ draft: "", saved: "" });
 
   useEffect(() => {
     let active = true;
@@ -84,6 +89,42 @@ export default function NewPathwayMap({ campus, locations, pathways }) {
       is_blocked: false,
       coordinates: route.coordinates,
     };
+  };
+
+  const addTag = () => {
+    setTags((prevTags) => {
+      return prevTags.push({ id: prevTags.length + 1, tag });
+    });
+    setTag("");
+  };
+
+  const addCaution = () => {
+    setCautions((prevCautions) => {
+      return prevCautions.push({ id: prevCautions.length + 1, caution });
+    });
+    setCaution("");
+  };
+
+  const saveDescription = () => {
+    setDescription((prev) => {
+      return { draft: "", saved: prev.draft };
+    });
+  };
+
+  const removeTag = (id) => {
+    const newTags = tags.filter((tag) => tag.id != id);
+    setTags(newTags);
+  };
+
+  const removeCaution = (id) => {
+    const newCautions = cautions.filter((caution) => caution.id != id);
+    setCautions(newCautions);
+  };
+
+  const removeDescription = () => {
+    setDescription((prev) => {
+      return { draft: prev.draft, saved: "" };
+    });
   };
 
   return (
@@ -237,18 +278,80 @@ export default function NewPathwayMap({ campus, locations, pathways }) {
       </div>
       <div>
         <div>
-          <button
-            type="button"
-            onClick={addPathway}
-            className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-xs transition shadow-sm"
-          >
-            Save Selected Pathway
-          </button>
+          <label htmlFor="tags">Add Tags</label>
+          <input
+            type="text"
+            id="tags"
+            placeholder="tags"
+            value={tag}
+            onChange={(e) => setTag(e.target.value)}
+          />
+          <button onClick={addTag}>Add Tag</button>
+        </div>
+        <div>
+          <label htmlFor="cautions">Add Cautions</label>
+          <input
+            type="text"
+            id="cautions"
+            placeholder="cautions"
+            value={caution}
+            onChange={(e) => setCaution(e.target.value)}
+          />
+          <button onClick={addCaution}>Add Caution</button>
+        </div>
+        <div>
+          <label htmlFor="description">Description</label>
+          <textarea
+            id="description"
+            rows="4"
+            cols="50"
+            placeholder="Add description"
+            value={description.draft}
+            onChange={(e) => e.target.value}
+          ></textarea>
+          <button onClick={saveDescription}>Save Description</button>
+        </div>
+
+        <div>
+          <div>
+            {tags.map((tag) => {
+              <>
+                <h1>Tags</h1>
+                <p>{tag.tag}</p>
+                <button onClick={() => removeTag(tag.id)}>Remove tag</button>
+              </>;
+            })}
+          </div>
+          <div>
+            {cautions.map((caution) => {
+              <>
+                <h1>Cautions</h1>
+                <p>{caution.caution}</p>
+                <button onClick={() => removeCaution(caution.id)}>
+                  Remove caution
+                </button>
+              </>;
+            })}
+          </div>
+          <div>
+            <h1>Description</h1>
+            <p>{description.saved}</p>
+            <button onClick={removeDescription}>Remove Description</button>
+          </div>
+          <div>
+            <button
+              type="button"
+              onClick={addPathway}
+              className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-xs transition shadow-sm"
+            >
+              Save Selected Pathway
+            </button>
+          </div>
         </div>
       </div>
     </>
   );
 }
 
-// Create form to collect tags, cautions and description 
+// Create form to collect tags, cautions and description
 // add tag adding mechanism where on add append to an array of objects and then display them, users can remove specific tag by clicking X symbol
