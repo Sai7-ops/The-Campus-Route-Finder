@@ -11,7 +11,12 @@ import {
 import L from "leaflet";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { fetchMultiModeCampusPathways } from "@/actions/pathwayActions";
+import {
+  fetchMultiModeCampusPathways,
+  addPathway,
+  fetchMultiCampusPathways
+} from "@/actions/pathwayActions";
+import { toast } from "react-toastify";
 
 delete L.Icon.Default.prototype._getIconUrl;
 L.Icon.Default.mergeOptions({
@@ -35,15 +40,18 @@ export default function NewPathwayMap({ campus, locations, pathways }) {
   const [cautions, setCautions] = useState([]);
   const [caution, setCaution] = useState("");
   const [description, setDescription] = useState({ draft: "", saved: "" });
+  const [isSaving, setIsSaving] = useState(false);
 
   useEffect(() => {
     let active = true;
-
+    setRoutes([]);
+    setSelectedRouteId(null);
+    setError(null);
     async function getRoutes() {
       setIsLoading(true);
       setError(null);
       try {
-        const paths = await fetchMultiModeCampusPathways(
+        const paths = await fetchMultiCampusPathways(
           [loc1.lat, loc1.lng],
           [loc2.lat, loc2.lng],
           50,
@@ -79,28 +87,16 @@ export default function NewPathwayMap({ campus, locations, pathways }) {
     setLoc2(location);
   };
 
-  const addPathway = () => {
-    const route = routes.find((route) => route.id === selectedRouteId);
-    const payload = {
-      campus_id: campus.id,
-      location1_id: loc1.id,
-      location2_id: loc2.id,
-      distance_m: route.distance_m,
-      is_blocked: false,
-      coordinates: route.coordinates,
-    };
-  };
-
   const addTag = () => {
     setTags((prevTags) => {
-      return prevTags.push({ id: prevTags.length + 1, tag });
+      return [...prevTags, { id: crypto.randomUUID(), tag }];
     });
     setTag("");
   };
 
   const addCaution = () => {
     setCautions((prevCautions) => {
-      return prevCautions.push({ id: prevCautions.length + 1, caution });
+      return [...prevCautions, { id: crypto.randomUUID(), caution }];
     });
     setCaution("");
   };
@@ -127,8 +123,91 @@ export default function NewPathwayMap({ campus, locations, pathways }) {
     });
   };
 
+  const onConfirm = async () => {
+    if (isSaving) return;
+
+    const selectedRoute = routes.find((route) => route.id === selectedRouteId);
+
+    if (!loc1 || !loc2 || loc1.id === loc2.id) {
+      toast.error("Select two different locations.");
+      return;
+    }
+
+    if (!selectedRouteId || isLoading) {
+      toast.error("Please select a valid pathway.");
+      return;
+    }
+
+    const payload = {
+      campus_id: campus.id,
+      location1_id: loc1.id,
+      location2_id: loc2.id,
+      distance_m: selectedRoute.distance_m,
+      is_blocked: false,
+      tagsArray: tags.map((item) => item.tag),
+      cautionsArray: cautions.map((item) => item.caution),
+      description: description.saved,
+      coordinates: selectedRoute.coordinates,
+    };
+
+    try {
+      setIsSaving(true);
+
+      const result = await addPathway(payload);
+
+      if (!result.success) {
+        toast.error(result.error || "Failed to add pathway.");
+        return;
+      }
+
+      toast.success("Successfully added new pathway!");
+
+      setLoc1(null);
+      setLoc2(null);
+      setRoutes([]);
+      setSelectedRouteId(null);
+      setTags([]);
+      setCautions([]);
+      setTag("");
+      setCaution("");
+      setDescription({ draft: "", saved: "" });
+    } catch (err) {
+      toast.error(err.message || "Failed to add pathway.");
+    } finally {
+      setIsSaving(false);
+    }
+  };
+
   return (
     <>
+      {isLoading && (
+        <div className="text-gray-500 py-6 text-center text-xs animate-pulse">
+          Analyzing pedestrian, cycle, and service road access...
+        </div>
+      )}
+
+      {error && (
+        <div className="space-y-2">
+          <p className="text-xs text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-100">
+            {error}
+          </p>
+          {/* <button
+                type="button"
+                onClick={onSwitchToManual}
+                className="w-full text-xs py-2 px-3 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition"
+              >
+                Trace Manually Instead
+              </button> */}
+        </div>
+      )}
+
+      {!isLoading && !error && routes.length === 0 && (
+        <h1>
+          No Pathways found for this set of locations, consider tracing
+          manually!
+        </h1>
+      )}
+
       <div className="h-110 w-full rounded-lg overflow-hidden border border-gray-200">
         <MapContainer
           center={[campus.lat, campus.lng]}
@@ -195,26 +274,43 @@ export default function NewPathwayMap({ campus, locations, pathways }) {
               })
             : null}
 
-          {isLoading && (
-            <div className="text-gray-500 py-6 text-center text-xs animate-pulse">
-              Analyzing pedestrian, cycle, and service road access...
-            </div>
-          )}
-
-          {error && (
-            <div className="space-y-2">
-              <p className="text-xs text-red-600 bg-red-50 p-2.5 rounded-lg border border-red-100">
-                {error}
-              </p>
-              <button
-                type="button"
-                onClick={onSwitchToManual}
-                className="w-full text-xs py-2 px-3 bg-gray-900 text-white font-medium rounded-lg hover:bg-gray-800 transition"
+          {pathways?.map((pathway) => {
+            return (
+              <Polyline
+                key={pathway.id}
+                positions={pathway.coordinates}
+                pathOptions={{
+                  color: "#94a3b8",
+                  weight: 6,
+                  opacity: 1.0,
+                  dashArray: null,
+                }}
               >
-                Trace Manually Instead
-              </button>
-            </div>
-          )}
+                <Popup>
+                  <p>Pathway ID #{pathway.id}</p>
+                  <p>Distance: {pathway.distance_m}</p>
+                  <div>
+                    <p>Tags</p>
+                    {pathway.tags?.map((tag, idx) => (
+                      <p key={idx + 1}>{tag}</p>
+                    ))}
+                  </div>
+                  <div>
+                    <p>Cautions</p>
+                    {pathway.cautions?.map((caution, idx) => (
+                      <p key={idx + 1}>{caution}</p>
+                    ))}
+                  </div>
+                  <p>Description</p>
+                  <p>
+                    {pathway?.description
+                      ? pathway.description
+                      : "Description Not Provided"}
+                  </p>
+                </Popup>
+              </Polyline>
+            );
+          })}
 
           {!isLoading &&
             !error &&
@@ -307,7 +403,11 @@ export default function NewPathwayMap({ campus, locations, pathways }) {
             cols="50"
             placeholder="Add description"
             value={description.draft}
-            onChange={(e) => e.target.value}
+            onChange={(e) =>
+              setDescription((prev) => {
+                return { ...prev, draft: e.target.value };
+              })
+            }
           ></textarea>
           <button onClick={saveDescription}>Save Description</button>
         </div>
@@ -315,22 +415,26 @@ export default function NewPathwayMap({ campus, locations, pathways }) {
         <div>
           <div>
             {tags.map((tag) => {
-              <>
-                <h1>Tags</h1>
-                <p>{tag.tag}</p>
-                <button onClick={() => removeTag(tag.id)}>Remove tag</button>
-              </>;
+              return (
+                <div key={tag.id}>
+                  <h1>Tags</h1>
+                  <p>{tag.tag}</p>
+                  <button onClick={() => removeTag(tag.id)}>Remove tag</button>
+                </div>
+              );
             })}
           </div>
           <div>
             {cautions.map((caution) => {
-              <>
-                <h1>Cautions</h1>
-                <p>{caution.caution}</p>
-                <button onClick={() => removeCaution(caution.id)}>
-                  Remove caution
-                </button>
-              </>;
+              return (
+                <div key={caution.id}>
+                  <h1>Cautions</h1>
+                  <p>{caution.caution}</p>
+                  <button onClick={() => removeCaution(caution.id)}>
+                    Remove caution
+                  </button>
+                </div>
+              );
             })}
           </div>
           <div>
@@ -341,7 +445,10 @@ export default function NewPathwayMap({ campus, locations, pathways }) {
           <div>
             <button
               type="button"
-              onClick={addPathway}
+              disabled={
+                isSaving || isLoading || !selectedRouteId || !loc1 || !loc2
+              }
+              onClick={onConfirm}
               className="w-full py-2 bg-blue-600 hover:bg-blue-700 text-white rounded-lg font-medium text-xs transition shadow-sm"
             >
               Save Selected Pathway
